@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Will you be my Valentine?</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <style>
+    :root {
+      --bg1: #b5c76f;
+      --bg2: #f6ccd4;
+      --card: #FFFFFF80; 
+      --yes: #e8a4b7;
+      --yesHover: #ff1f68;
+      --cinnamoroll: url('https://cur.cursors-4u.net/anime/ani-12/ani1160.png'), auto;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100svh;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at top, var(--bg2), var(--bg1));
+      font-family: "Times New Roman", Times, serif;
+      overflow: hidden;
+      padding: 16px;
+      cursor: var(--cinnamoroll);
+      transition: background 1s ease;
+    }
+
+    /* --- Pre-Initial Styles --- */
+    #pre-initial {
+      display: flex;
+      flex-direction: row; 
+      gap: 15px;
+      z-index: 100;
+      flex-wrap: wrap; 
+      justify-content: center;
+    }
+
+    .nav-btn {
+      position: relative !important;
+      top: unset !important;
+      transform: none !important;
+      background: white;
+      color: #d81b60;
+      width: clamp(140px, 40vw, 200px);
+      padding: 18px !important;
+      font-size: clamp(16px, 4vw, 22px) !important;
+      border: 2px solid #f6ccd4 !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-btn:hover {
+      background: #f6ccd4;
+      transform: scale(1.05) !important;
+    }
+
+    /* --- Animations and Effects --- */
+    .heart {
+      position: fixed;
+      user-select: none;
+      pointer-events: none;
+      z-index: 10005; 
+      animation: floatUp linear forwards;
+    }
+
+    .star {
+      position: fixed;
+      top: -5vh;
+      user-select: none;
+      pointer-events: none;
+      z-index: 10001;
+      animation: fallTwinkle linear forwards;
+    }
+
+    .shooting-star {
+      position: fixed;
+      top: var(--start-y);
+      z-index: 10002;
+      font-size: 32px; 
+      pointer-events: none;
+      text-shadow: 0 0 15px currentColor, 0 0 5px #fff;
+    }
+
+    .trail-particle {
+      position: fixed;
+      pointer-events: none;
+      z-index: 10001;
+      border-radius: 50%;
+      animation: fadeOut 1.2s ease-out forwards;
+    }
+
+    .pink-shoot { color: #ffc1d1; animation: shootRight 6s linear forwards; left: -50px; }
+    .green-shoot { color: #d4e1a1; animation: shootLeft 6s linear forwards; right: -50px; }
+
+    @keyframes floatUp {
+      0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(-110vh) translateX(var(--drift)) rotate(var(--rot)); opacity: 0; }
+    }
+
+    @keyframes fallTwinkle {
+      0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+      10% { opacity: 0.8; }
+      90% { opacity: 0.8; }
+      100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
+    }
+
+    @keyframes shootRight {
+      0% { transform: translate(0, 0) rotate(15deg); opacity: 0; }
+      5% { opacity: 1; }
+      95% { opacity: 1; }
+      100% { transform: translate(115vw, 25vh) rotate(15deg); opacity: 0; }
+    }
+
+    @keyframes shootLeft {
+      0% { transform: translate(0, 0) rotate(-15deg); opacity: 0; }
+      5% { opacity: 1; }
+      95% { opacity: 1; }
+      100% { transform: translate(-115vw, 25vh) rotate(-15deg); opacity: 0; }
+    }
+
+    @keyframes fadeOut {
+      from { opacity: 0.8; transform: scale(1); }
+      to { opacity: 0; transform: scale(0.2); }
+    }
+
+    #confettiCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .card {
+      position: relative;
+      width: min(720px, 92vw);
+      padding: 10px 22px;
+      background: var(--card);
+      backdrop-filter: blur(10px);
+      border-radius: 22px;
+      text-align: center;
+      box-shadow: 0 18px 60px rgba(0,0,0,.15);
+      z-index: 10;
+      display: none; 
+    }
+
+    .valentine-question {
+      font-size: clamp(24px, 4.5vw, 42px); 
+      margin: 10px 0; 
+      color: #d81b60;
+    }
+
+    .gradient-text {
+      font-size: clamp(18px, 4vw, 24px);
+      background: linear-gradient(90deg, #f6ccd4, #b5c76f, #f6ccd4);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: bold;
+      margin: 10px 0;
+      display: inline-block;
+    }
+
+    .button-zone {
+      position: relative;
+      width: min(520px, 92%);
+      height: 240px; 
+      margin: 0 auto;
+      touch-action: none;
+    }
+
+    button {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 14px 22px;
+      font-size: 18px;
+      font-weight: 800;
+      border-radius: 999px;
+      border: none;
+      cursor: var(--cinnamoroll);
+      box-shadow: 0 10px 24px rgba(0,0,0,.14);
+      user-select: none;
+      transition: transform .25s cubic-bezier(0.175, 0.885, 0.32, 1.275), background .12s ease;
+      font-family: inherit; 
+    }
+
+    #yesBtn { left: 15%; background: var(--yes); color: #fff; z-index: 20; }
+    #noBtn { left: 65%; background: #7d944a; color: #111827; z-index: 30; }
+
+    #letter-page {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #ffffff;
+      z-index: 10000;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 40px; 
+      overflow-y: auto;
+      animation: slideUp 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+    }
+
+    .letter-content { 
+      max-width: 600px; 
+      width: 100%; 
+      display: flex; 
+      flex-direction: column; 
+      padding-bottom: 60px; 
+    }
+
+    .letter-body { line-height: 1.6; color: #444; font-size: clamp(16px, 3.8vw, 19px); margin: 10px 0; text-align: center; }
+    .letter-signature { align-self: flex-end; font-style: italic; color: #444; text-align: right; }
+    
+    .meow-pic {
+      width: min(300px, 80vw);
+      border-radius: 15px;
+      margin: 15px auto 5px;
+      box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+      display: block;
+      transition: transform 0.3s ease;
+      cursor: pointer;
+    }
+    .meow-pic:hover { transform: scale(1.05); }
+
+    .click-legend {
+      font-size: 13px;
+      color: #999;
+      font-style: italic;
+      margin-bottom: 15px;
+      text-align: center;
+      opacity: 0.7;
+    }
+
+    .signature-gif {
+      align-self: center; 
+      width: 220px; 
+      margin: 20px 0;
+    }
+
+    #homeBtn { 
+      position: relative;
+      margin: 30px auto 0; 
+      background: #f0f0f0; 
+      padding: 10px;
+      font-size: 28px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      top: unset;
+      left: unset;
+      transform: none;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+    #homeBtn:hover {
+      transform: scale(1.1) !important;
+      background: #e0e0e0;
+    }
+
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .hint { font-size: 12px; margin-top: 5px; opacity: 1; text-align: center; font-weight: bold; min-height: 20px;}
+    .tiny-hint { font-size: 9px; margin-bottom: 2px; opacity: 0.5; text-align: center; font-style: italic;}
+  </style>
+</head>
+
+<body>
+  <canvas id="confettiCanvas"></canvas>
+
+  <div id="pre-initial">
+    <button id="firstBtn" class="nav-btn">here first</button>
+    <button id="secondBtn" class="nav-btn">here second</button>
+  </div>
+
+  <main id="mainCard" class="card">
+    <div id="initial-content">
+      <img style="width: min(280px, 80vw); margin: 0 auto; display: block;" src="https://media1.tenor.com/m/lqOqaIfUSDMAAAAC/rat-cute-cry.gif" alt="Crying Rat" />
+      <h1 class="valentine-question">my sweet spicy hot meow,</h1>
+      <h1 class="valentine-question" style="font-size: clamp(20px, 4vw, 36px);">will you be my valentine?</h1>     
+      <section class="button-zone" id="zone">
+        <button id="yesBtn">Yes</button>
+        <button id="noBtn">No</button>
+      </section>
+      <div class="tiny-hint">catch the no</div>
+      <div id="catchHint" class="hint" style="opacity: 0;">uhm... why are you trying to catch the no huh 🤨</div>
+    </div>
+
+    <section class="result" id="result" style="display:none;">
+      <h2>LET'S FUCKING GOOOOO! 🎉</h2>
+      <img style="width: min(280px, 80vw); margin: 0 auto; display: block;" src="https://media.tenor.com/9uprlTXW3kUAAAAj/cute-love.gif" alt="Love" />
+      <div class="gradient-text">te wa preñar</div>
+      <br>
+      <button id="emailBtn" style="position:relative; font-size:60px; background:none; border:none; box-shadow:none; cursor:pointer; transform:none; top:0;">✉️</button>
+    </section>
+  </main>
+
+  <div id="letter-page">
+    <div class="letter-content">
+      <div style="text-align: center; margin-top: 10px;">
+        <img src="https://media.tenor.com/71T_qW0H198AAAAj/love-letter-heart.gif" style="width:140px; margin-bottom: 10px;">
+      </div>
+      <p style="align-self: flex-start; margin-bottom: 15px; font-style: italic; color: #444;">my sweet lover girl, my baby, my princess.</p>
+      <p class="letter-body">on a serious note, there aren't enough words to ask you for this after many-many-many years together but i will never fail to ask anyways. please, make me the happiest person and be my valentine...</p>
+      <div style="margin: 25px 0; padding: 10px 0;">
+        <p class="letter-body" style="color: #333;">kafka said: <b style="font-style: italic;">“come with me, milena. we are going to love each other without scruples or fear or restraint. because the world is ending tomorrow"</b></p>
+      </div>
+      <p class="letter-body">and that's how i feel about loving you. i want no stops, no fears, no restrains. i want nothing and no one stopping us from loving each other. i know i'm trying to make the page happy and also cute but this one quote is... something we can say that could show our relationship. i think we're both funny, kind, serious (when we have to) and over all, two meows in love. </p>
+      
+      <div style="text-align: center;">
+        <img id="meowPic" src="https://www.meme-arsenal.com/memes/8c9792ce0b3774f90152c69d8f269859.jpg" class="meow-pic" alt="Two meows in love">
+        <div class="click-legend">click me!</div>
+      </div>
+
+      <p class="letter-body">thank you for choosing me every single (easy or rough) day. i meow you and i will continue to meow you until the end of my existence.</p>
+      <p class="letter-body">i really hope you find this cute and funny, and cute.</p>
+      <p class="letter-body">can you be my valentine today and forever?</p>
+
+
+      <img src="https://i.pinimg.com/originals/ca/93/62/ca9362096a5b288f6656c5d2270e22ce.gif" class="signature-gif" alt="Cinnamoroll Love">
+      <p class="letter-signature">- with much love and yours truly,<br>your soft meow.</p>
+
+      <button id="homeBtn">🏠</button>
+    </div>
+  </div>
+
+  <script>
+    const firstBtn = document.getElementById("firstBtn");
+    const secondBtn = document.getElementById("secondBtn");
+    const preInitial = document.getElementById("pre-initial");
+    const mainCard = document.getElementById("mainCard");
+    
+    const yesBtn = document.getElementById("yesBtn");
+    const noBtn = document.getElementById("noBtn");
+    const emailBtn = document.getElementById("emailBtn");
+    const catchHint = document.getElementById("catchHint");
+    const letterPage = document.getElementById("letter-page");
+    const meowPic = document.getElementById("meowPic");
+
+    let yesScale = 1;
+    let stopCelebration = false;
+    let celebrationInterval;
+    let starInterval; // To track and stop the falling stars
+    let moveCount = 0; 
+
+    firstBtn.addEventListener("click", () => {
+      window.open("https://open.spotify.com/track/12TOa8pzhbLTWh1vxIsPMp?si=efd2048da59c4e2f&nd=1&dlsi=ed50610da85b4c7c", "_blank");
+    });
+
+    secondBtn.addEventListener("click", () => {
+      preInitial.style.display = "none";
+      mainCard.style.display = "block";
+    });
+
+    noBtn.addEventListener("pointermove", () => {
+      const z = document.getElementById("zone").getBoundingClientRect();
+      noBtn.style.left = Math.random() * (z.width - 60) + "px";
+      noBtn.style.top = Math.random() * (z.height - 40) + "px";
+      
+      yesScale += 0.15;
+      yesBtn.style.transform = `translateY(-50%) scale(${yesScale})`;
+      
+      moveCount++;
+      
+      if (moveCount >= 8) {
+        catchHint.style.opacity = "1";
+        catchHint.innerText = "... pwetty pwease? 🥺";
+      } else if (moveCount >= 4) {
+        catchHint.style.opacity = "1";
+        catchHint.innerText = "you'll never catch it... say yes";
+      }
+    });
+
+    function createSingleHeart() {
+      if (stopCelebration) return;
+      const colors = ["#f6ccd4", "#b5c76f", "#ffc1d1", "#d4e1a1"];
+      const heart = document.createElement("div");
+      heart.classList.add("heart");
+      heart.innerHTML = "❤";
+      heart.style.color = colors[Math.floor(Math.random() * colors.length)];
+      heart.style.left = Math.random() * 100 + "vw";
+      heart.style.top = "100vh";
+      heart.style.fontSize = (Math.random() * 35 + 15) + "px";
+      heart.style.setProperty('--drift', (Math.random() * 600 - 300) + "px");
+      heart.style.setProperty('--rot', (Math.random() * 720 - 360) + "deg");
+      heart.style.animationDuration = (Math.random() * 3 + 2) + "s";
+      document.body.appendChild(heart);
+      setTimeout(() => heart.remove(), 4500);
+    }
+
+    function triggerYesCelebration() {
+      stopCelebration = false;
+      const colors = ["#f6ccd4", "#b5c76f"];
+      celebrationInterval = setInterval(createSingleHeart, 150);
+
+      (function frame() {
+        if (stopCelebration) return;
+        confetti({
+          particleCount: 2,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0, y: 0.8 },
+          colors: colors
+        });
+        confetti({
+          particleCount: 2,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1, y: 0.8 },
+          colors: colors
+        });
+        requestAnimationFrame(frame);
+      }());
+    }
+
+    function createMeowHeartBurst(x, y) {
+      const colors = ["#ffc1d1", "#d4e1a1", "#ff4d6d", "#f8bbd0"]; 
+      for (let i = 0; i < 30; i++) {
+        const heart = document.createElement("div");
+        heart.classList.add("heart");
+        heart.innerHTML = "❤";
+        heart.style.color = colors[Math.floor(Math.random() * colors.length)];
+        heart.style.left = x + "px";
+        heart.style.top = y + "px";
+        heart.style.fontSize = (Math.random() * 25 + 15) + "px";
+        heart.style.setProperty('--drift', (Math.random() * 400 - 200) + "px");
+        heart.style.setProperty('--rot', (Math.random() * 720 - 360) + "deg");
+        heart.style.animationDuration = (Math.random() * 1.5 + 2) + "s";
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), 3500);
+      }
+    }
+
+    function startStars() {
+      // Clear existing interval if any
+      if (starInterval) clearInterval(starInterval);
+      
+      starInterval = setInterval(() => {
+        const star = document.createElement("div");
+        star.classList.add("star");
+        star.innerHTML = "★";
+        star.style.color = ["#000", "#333", "#666", "#999"][Math.floor(Math.random() * 4)];
+        star.style.left = Math.random() * 100 + "vw";
+        star.style.animationDuration = (Math.random() * 4 + 6) + "s";
+        document.body.appendChild(star);
+        setTimeout(() => star.remove(), 10000);
+      }, 400);
+    }
+
+    function triggerShootingStar(type) {
+      const star = document.createElement("div");
+      star.className = `shooting-star ${type}-shoot`;
+      star.innerHTML = "★";
+      star.style.setProperty('--start-y', (Math.random() * 40 + 10) + "vh");
+      document.body.appendChild(star);
+
+      const trailInterval = setInterval(() => {
+        const rect = star.getBoundingClientRect();
+        if (rect.left < -100 || rect.left > window.innerWidth + 100) {
+          clearInterval(trailInterval);
+          return;
+        }
+        const p = document.createElement("div");
+        p.className = "trail-particle";
+        p.style.left = rect.left + 15 + "px";
+        p.style.top = rect.top + 15 + "px";
+        p.style.width = "6px"; p.style.height = "6px";
+        p.style.backgroundColor = type === 'pink' ? '#ffc1d1' : '#d4e1a1';
+        p.style.boxShadow = `0 0 10px ${p.style.backgroundColor}`;
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 1200);
+      }, 50);
+    }
+
+    meowPic.addEventListener("click", (e) => {
+      createMeowHeartBurst(e.clientX, e.clientY);
+    });
+
+    yesBtn.addEventListener("click", () => {
+      document.getElementById("initial-content").style.display = "none";
+      document.getElementById("result").style.display = "block";
+      document.body.style.background = "radial-gradient(circle, #fce4ec, #bbdefb)";
+      triggerYesCelebration();
+    });
+
+    emailBtn.addEventListener("click", () => {
+      stopCelebration = true; 
+      clearInterval(celebrationInterval);
+      letterPage.style.display = "flex";
+      startStars();
+      setTimeout(() => triggerShootingStar('pink'), 2000);
+      setTimeout(() => triggerShootingStar('green'), 4500);
+    });
+
+    // HOME BUTTON LOGIC
+    document.getElementById("homeBtn").addEventListener("click", () => {
+      // 1. Hide all current layers
+      letterPage.style.display = "none";
+      mainCard.style.display = "none";
+      document.getElementById("result").style.display = "none";
+      
+      // 2. Stop all heart and star loops
+      stopCelebration = true;
+      clearInterval(celebrationInterval);
+      clearInterval(starInterval);
+      
+      // 3. REMOVE ALL ACTIVE STARS AND PARTICLES FROM SCREEN
+      const elementsToClear = document.querySelectorAll('.star, .shooting-star, .trail-particle, .heart');
+      elementsToClear.forEach(el => el.remove());
+      
+      // 4. Reset variables
+      yesScale = 1;
+      moveCount = 0;
+      
+      // 5. Reset visuals
+      yesBtn.style.transform = `translateY(-50%) scale(1)`;
+      catchHint.style.opacity = "0";
+      catchHint.innerText = "uhm... why are you trying to catch the no huh 🤨";
+      document.body.style.background = "radial-gradient(circle at top, var(--bg2), var(--bg1))";
+      
+      // 6. Go back to very first screen
+      preInitial.style.display = "flex";
+      document.getElementById("initial-content").style.display = "block";
+    });
+  </script>
+</body>
+</html>
